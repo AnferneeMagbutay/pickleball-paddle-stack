@@ -4,7 +4,14 @@ import { useStore } from "../state/store";
 import { useNameLookup } from "./useNameLookup";
 
 export function QueueView() {
-  const { state, addPlayer, removePlayer, moveInQueue } = useStore();
+  const {
+    state,
+    addPlayer,
+    removePlayer,
+    moveInQueue,
+    benchPlayer,
+    resumePlayer,
+  } = useStore();
   const nameOf = useNameLookup();
   const [name, setName] = useState("");
 
@@ -86,6 +93,13 @@ export function QueueView() {
                     ⤓
                   </button>
                   <button
+                    className="icon-btn"
+                    aria-label="Bench player"
+                    onClick={() => benchPlayer(id)}
+                  >
+                    ⏸
+                  </button>
+                  <button
                     className="icon-btn icon-danger"
                     aria-label="Remove player"
                     onClick={() => removePlayer(id)}
@@ -98,6 +112,34 @@ export function QueueView() {
           </ul>
         )}
       </section>
+
+      {state.benched.length > 0 && (
+        <section className="queue-section">
+          <h2 className="section-title">Benched</h2>
+          <ul className="queue-list">
+            {state.benched.map((id) => (
+              <li key={id} className="queue-row queue-row-benched">
+                <span className="player-name">{nameOf(id)}</span>
+                <span className="row-actions">
+                  <button
+                    className="btn btn-ghost btn-inline"
+                    onClick={() => resumePlayer(id)}
+                  >
+                    Resume
+                  </button>
+                  <button
+                    className="icon-btn icon-danger"
+                    aria-label="Remove player"
+                    onClick={() => removePlayer(id)}
+                  >
+                    ✗
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

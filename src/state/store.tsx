@@ -18,6 +18,9 @@ interface Store {
   setCourtCount(count: number): void;
   startGame(courtId: number): void;
   endGame(courtId: number, winner: GameOutcome): void;
+  undoLastGameEnd(): void;
+  benchPlayer(id: string): void;
+  resumePlayer(id: string): void;
 }
 
 const StoreContext = createContext<Store | null>(null);
@@ -41,6 +44,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       startGame: (courtId) => setState((s) => engine.startGame(s, courtId)),
       endGame: (courtId, winner) =>
         setState((s) => engine.endGame(s, courtId, winner)),
+      undoLastGameEnd: () => setState((s) => engine.undoLastGameEnd(s)),
+      benchPlayer: (id) => setState((s) => engine.benchPlayer(s, id)),
+      resumePlayer: (id) => setState((s) => engine.resumePlayer(s, id)),
     }),
     [state],
   );

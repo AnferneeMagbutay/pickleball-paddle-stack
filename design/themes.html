@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Paddle Stack — Theme Preview</title>
+    <style>
+      :root {
+        --radius: 14px;
+        --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+
+      /* ---- Themes ---- */
+      [data-theme='midnight'] {
+        --bg: #0b1020;
+        --surface: #161c2e;
+        --surface2: #1e2740;
+        --line: #2a3450;
+        --text: #e8eaf2;
+        --muted: #8b93a7;
+        --accent: #6366f1;
+        --accent-2: #8b5cf6;
+        --on-accent: #ffffff;
+        --win: #22c55e;
+        --lose: #f43f5e;
+        --banner-bg: #2a2350;
+        --banner-text: #c7b8ff;
+      }
+      [data-theme='rally'] {
+        --bg: #0c0a09;
+        --surface: #1c1917;
+        --surface2: #292524;
+        --line: #3a3431;
+        --text: #fafaf9;
+        --muted: #a8a29e;
+        --accent: #f59e0b;
+        --accent-2: #fb7185;
+        --on-accent: #1c1917;
+        --win: #34d399;
+        --lose: #fb7185;
+        --banner-bg: #3a2a12;
+        --banner-text: #fcd9a6;
+      }
+      [data-theme='slate'] {
+        --bg: #09090b;
+        --surface: #18181b;
+        --surface2: #232327;
+        --line: #2c2c31;
+        --text: #fafafa;
+        --muted: #a1a1aa;
+        --accent: #3b82f6;
+        --accent-2: #3b82f6;
+        --on-accent: #ffffff;
+        --win: #22c55e;
+        --lose: #ef4444;
+        --banner-bg: #1e293b;
+        --banner-text: #bfdbfe;
+      }
+      [data-theme='sand'] {
+        --bg: #f4efe9;
+        --surface: #ffffff;
+        --surface2: #faf6f1;
+        --line: #e7ded3;
+        --text: #2b2622;
+        --muted: #8a7f73;
+        --accent: #e0612f;
+        --accent-2: #d4456b;
+        --on-accent: #ffffff;
+        --win: #1f9d57;
+        --lose: #d4456b;
+        --banner-bg: #fbe8d6;
+        --banner-text: #9a4a1c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--font);
+        background: #000;
+        color: #fff;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .switcher {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 14px 12px;
+        background: #0a0a0a;
+        border-bottom: 1px solid #222;
+      }
+      .switcher button {
+        border: 1px solid #333;
+        background: #161616;
+        color: #eaeaea;
+        padding: 9px 13px;
+        border-radius: 999px;
+        font-size: 0.85rem;
+      }
+      .switcher button.active {
+        border-color: #888;
+        background: #2a2a2a;
+        font-weight: 600;
+      }
+      .caption {
+        text-align: center;
+        color: #888;
+        font-size: 0.8rem;
+        padding: 8px 16px 0;
+      }
+
+      /* ---- Phone frame (themed) ---- */
+      .phone {
+        max-width: 400px;
+        margin: 18px auto 40px;
+        background: var(--bg);
+        color: var(--text);
+        border-radius: 28px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: var(--on-accent);
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 1.1rem;
+        letter-spacing: 0.02em;
+      }
+      .toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8rem;
+      }
+      .toggle .chip {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        background: transparent;
+        color: inherit;
+        font-size: 0.95rem;
+      }
+      .toggle .chip.on {
+        background: rgba(255, 255, 255, 0.95);
+        color: var(--accent);
+        font-weight: 700;
+        border-color: transparent;
+      }
+
+      .banner {
+        margin: 0;
+        padding: 10px 16px;
+        background: var(--banner-bg);
+        color: var(--banner-text);
+        font-size: 0.82rem;
+      }
+
+      .body {
+        padding: 16px;
+      }
+      .section-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin: 4px 0 10px;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 14px;
+        margin-bottom: 12px;
+      }
+      .card.playing {
+        border-left: 4px solid var(--accent);
+      }
+      .court-tag {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .team {
+        font-size: 1.08rem;
+        font-weight: 650;
+      }
+      .vs {
+        color: var(--muted);
+        font-size: 0.8rem;
+        margin: 2px 0;
+      }
+      .open-label {
+        color: var(--muted);
+        margin: 0 0 12px;
+      }
+
+      .btn {
+        display: block;
+        width: 100%;
+        border: none;
+        border-radius: 11px;
+        padding: 13px;
+        font-size: 1rem;
+        margin-top: 12px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: var(--on-accent);
+        font-weight: 600;
+      }
+      .btn.ghost {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--text);
+        font-weight: 500;
+      }
+      .btn.win {
+        background: var(--win);
+        color: #fff;
+      }
+
+      .qrow {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+      }
+      .pos {
+        width: 22px;
+        height: 22px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: var(--on-accent);
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+      .qname {
+        flex: 1;
+      }
+      .ico {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--surface2);
+        color: var(--text);
+      }
+      .ico.danger {
+        color: var(--lose);
+      }
+
+      table.lb {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .lb th,
+      .lb td {
+        padding: 9px;
+        text-align: center;
+        font-size: 0.85rem;
+        border-bottom: 1px solid var(--line);
+      }
+      .lb th {
+        background: var(--surface2);
+        color: var(--muted);
+      }
+      .lb td.name {
+        text-align: left;
+        font-weight: 600;
+      }
+      .lb tr:last-child td {
+        border-bottom: none;
+      }
+      .lb .pct {
+        color: var(--accent-2);
+        font-weight: 700;
+      }
+
+      .tabs {
+        display: flex;
+        border-top: 1px solid var(--line);
+        background: var(--surface);
+      }
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 13px 0;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+      .tab.active {
+        color: var(--text);
+        font-weight: 650;
+        box-shadow: inset 0 2px 0 var(--accent);
+      }
+    </style>
+  </head>
+  <body data-theme="midnight">
+    <div class="switcher">
+      <button data-set="midnight" class="active">Midnight Violet</button>
+      <button data-set="rally">Night Rally</button>
+      <button data-set="slate">Electric Slate</button>
+      <button data-set="sand">Warm Sand (light)</button>
+    </div>
+    <p class="caption">Tap a theme above. This is a mockup of the real screens — colors and styling only.</p>
+
+    <div class="phone">
+      <div class="header">
+        <h1>Paddle Stack</h1>
+        <div class="toggle">
+          <span>Courts</span>
+          <button class="chip on">1</button>
+          <button class="chip">2</button>
+        </div>
+      </div>
+
+      <p class="banner">⚠ Small group — some players will play back-to-back games.</p>
+
+      <div class="body">
+        <div class="section-label">Courts</div>
+
+        <div class="card playing">
+          <div class="court-tag">Court 1</div>
+          <div class="team">Ana + Ben</div>
+          <div class="vs">vs</div>
+          <div class="team">Cy + Dee</div>
+          <button class="btn">End game</button>
+        </div>
+
+        <div class="card">
+          <div class="court-tag">Court 2</div>
+          <p class="open-label">Open</p>
+          <button class="btn">Start game</button>
+        </div>
+
+        <div class="section-label" style="margin-top: 18px">Up next</div>
+        <div class="qrow">
+          <span class="pos">1</span><span class="qname">Eli</span>
+          <button class="ico">↑</button><button class="ico">↓</button>
+          <button class="ico danger">✗</button>
+        </div>
+        <div class="qrow">
+          <span class="pos">2</span><span class="qname">Fay</span>
+          <button class="ico">↑</button><button class="ico">↓</button>
+          <button class="ico danger">✗</button>
+        </div>
+
+        <div class="section-label" style="margin-top: 18px">Leaderboard</div>
+        <table class="lb">
+          <thead>
+            <tr><th class="name" style="text-align: left">Player</th><th>W</th><th>L</th><th>GP</th><th>Win %</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="name">Ana</td><td>3</td><td>1</td><td>4</td><td class="pct">75%</td></tr>
+            <tr><td class="name">Ben</td><td>2</td><td>2</td><td>4</td><td class="pct">50%</td></tr>
+            <tr><td class="name">Cy</td><td>1</td><td>3</td><td>4</td><td class="pct">25%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active">Courts</div>
+        <div class="tab">Queue</div>
+        <div class="tab">Leaderboard</div>
+      </div>
+    </div>
+
+    <script>
+      const buttons = document.querySelectorAll('.switcher button');
+      buttons.forEach((b) =>
+        b.addEventListener('click', () => {
+          document.body.dataset.theme = b.dataset.set;
+          buttons.forEach((x) => x.classList.toggle('active', x === b));
+        }),
+      );
+    </script>
+  </body>
+</html>

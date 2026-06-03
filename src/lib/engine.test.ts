@@ -2,15 +2,19 @@ import { describe, expect, it } from "vitest";
 import {
   addPlayer,
   backToBackThreshold,
+  benchPlayer,
   canStartGame,
+  canUndo,
   endGame,
   initialState,
   leaderboard,
   moveInQueue,
   removePlayer,
+  resumePlayer,
   setCourtCount,
   smallGroupWarning,
   startGame,
+  undoLastGameEnd,
   winPct,
 } from "./engine";
 import type { AppState } from "./types";
@@ -187,5 +191,100 @@ describe("match tracking", () => {
     state = endGame(state, 1, "A");
     // Winners a,b land at the very back, behind everyone who was waiting.
     expect(state.queue).toEqual([...queueAfterStart, "a", "b", "c", "d"]);
+  });
+});
+
+describe("undo last game end", () => {
+  it("is unavailable until a game ends", () => {
+    const state = withPlayers(["a", "b", "c", "d"]);
+    expect(canUndo(state)).toBe(false);
+    expect(undoLastGameEnd(state)).toBe(state);
+  });
+
+  it("restores the court, queue, and stats after a recorded win", () => {
+    let state = withPlayers(["a", "b", "c", "d", "e"]);
+    state = startGame(state, 1, noShuffle); // a,b vs c,d ; queue [e]
+    const playing = state;
+    state = endGame(state, 1, "A");
+    expect(canUndo(state)).toBe(true);
+
+    state = undoLastGameEnd(state);
+    expect(state.courts[0].status).toBe("playing");
+    expect(state.courts[0].teamA).toEqual(["a", "b"]);
+    expect(state.courts[0].teamB).toEqual(["c", "d"]);
+    expect(state.queue).toEqual(["e"]);
+    expect(state.stats).toEqual(playing.stats); // wins/losses rolled back
+    expect(canUndo(state)).toBe(false);
+  });
+
+  it("rolls back nothing for a voided game but restores court and queue", () => {
+    let state = withPlayers(["a", "b", "c", "d"]);
+    state = startGame(state, 1, noShuffle);
+    state = endGame(state, 1, null);
+    state = undoLastGameEnd(state);
+    expect(state.courts[0].status).toBe("playing");
+    expect(state.queue).toEqual([]);
+    expect(state.stats["a"]).toEqual({ wins: 0, losses: 0, games: 0 });
+  });
+
+  it("is single-step (cannot undo twice)", () => {
+    let state = withPlayers(["a", "b", "c", "d"]);
+    state = startGame(state, 1, noShuffle);
+    state = endGame(state, 1, "A");
+    state = undoLastGameEnd(state);
+    const before = state;
+    state = undoLastGameEnd(state);
+    expect(state).toBe(before);
+  });
+
+  it("is invalidated by another action after the game end", () => {
+    let state = withPlayers(["a", "b", "c", "d"]);
+    state = startGame(state, 1, noShuffle);
+    state = endGame(state, 1, "A");
+    state = addPlayer(state, "e", "e"); // any other mutation clears undo
+    expect(canUndo(state)).toBe(false);
+  });
+});
+
+describe("bench and resume", () => {
+  it("benches a queued player out of rotation, keeping them on the roster", () => {
+    let state = withPlayers(["a", "b", "c", "d"]);
+    state = benchPlayer(state, "b");
+    expect(state.queue).not.toContain("b");
+    expect(state.benched).toContain("b");
+    expect(state.players.map((p) => p.id)).toContain("b");
+  });
+
+  it("blocks benching a player who is on a court", () => {
+    let state = startGame(withPlayers(["a", "b", "c", "d"]), 1, noShuffle);
+    const before = state;
+    state = benchPlayer(state, "a");
+    expect(state).toBe(before);
+  });
+
+  it("resumes a benched player to the back of the queue", () => {
+    let state = withPlayers(["a", "b", "c"]);
+    state = benchPlayer(state, "a"); // queue: [b, c], benched: [a]
+    state = resumePlayer(state, "a");
+    expect(state.benched).toEqual([]);
+    expect(state.queue).toEqual(["b", "c", "a"]);
+  });
+
+  it("can remove a benched player and retains stats", () => {
+    let state = withPlayers(["a", "b", "c", "d"]);
+    state = startGame(state, 1, noShuffle);
+    state = endGame(state, 1, "A"); // a..d back in queue with stats
+    state = benchPlayer(state, "a");
+    state = removePlayer(state, "a");
+    expect(state.benched).not.toContain("a");
+    expect(state.players.map((p) => p.id)).not.toContain("a");
+    expect(state.stats["a"]).toEqual({ wins: 1, losses: 0, games: 1 });
+  });
+
+  it("excludes benched players from the small-group warning count", () => {
+    let state = withPlayers(["a", "b", "c", "d", "e", "f", "g", "h"]); // 8 → no warning
+    expect(smallGroupWarning(state)).toBe(false);
+    state = benchPlayer(state, "h"); // 7 available → warning
+    expect(smallGroupWarning(state)).toBe(true);
   });
 });

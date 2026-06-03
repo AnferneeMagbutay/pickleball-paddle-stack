@@ -3,10 +3,11 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// Generates the PWA icon set: a teal rounded square with a white ball.
+// Generates the PWA icon set: an indigo→violet rounded square with a white ball.
 // Run with `npm run icons`. No external image libraries required.
 
-const TEAL = [15, 118, 110];
+const INDIGO = [99, 102, 241];
+const VIOLET = [139, 92, 246];
 const WHITE = [255, 255, 255];
 
 function pngChunk(type, data) {
@@ -65,8 +66,16 @@ function iconPixel(x, y, size) {
   const cy = size / 2;
   const ball = size * 0.28;
   const d = Math.hypot(x - cx, y - cy);
-  const [cr, cg, cb] = d <= ball ? WHITE : TEAL;
-  return [cr, cg, cb, 255];
+  if (d <= ball) return [...WHITE, 255];
+  // Diagonal indigo→violet gradient background.
+  const t = (x + y) / (2 * (size - 1));
+  const mix = (a, b) => Math.round(a + (b - a) * t);
+  return [
+    mix(INDIGO[0], VIOLET[0]),
+    mix(INDIGO[1], VIOLET[1]),
+    mix(INDIGO[2], VIOLET[2]),
+    255,
+  ];
 }
 
 const here = dirname(fileURLToPath(import.meta.url));

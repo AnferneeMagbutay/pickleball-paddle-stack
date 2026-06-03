@@ -7,7 +7,7 @@ import type {
   PlayerStats,
 } from "./types";
 
-export const CURRENT_VERSION = 1;
+export const CURRENT_VERSION = 2;
 export const PLAYERS_PER_GAME = 4;
 const MAX_COURTS = 2;
 
@@ -22,7 +22,9 @@ export function initialState(courtCount = 1): AppState {
     players: [],
     queue: [],
     courts: Array.from({ length: n }, (_, i) => makeCourt(i + 1)),
+    benched: [],
     stats: {},
+    lastGameEnd: null,
   };
 }
 
@@ -52,6 +54,7 @@ export function addPlayer(
     players: [...state.players, { id, name: trimmed }],
     queue: [...state.queue, id],
     stats: { ...state.stats, [id]: emptyStats() },
+    lastGameEnd: null,
   };
 }
 
@@ -61,7 +64,29 @@ export function removePlayer(state: AppState, id: PlayerId): AppState {
     ...state,
     players: state.players.filter((p) => p.id !== id),
     queue: state.queue.filter((q) => q !== id),
+    benched: state.benched.filter((b) => b !== id),
+    lastGameEnd: null,
     // stats entry is intentionally retained, per spec.
+  };
+}
+
+export function benchPlayer(state: AppState, id: PlayerId): AppState {
+  if (!state.queue.includes(id)) return state;
+  return {
+    ...state,
+    queue: state.queue.filter((q) => q !== id),
+    benched: [...state.benched, id],
+    lastGameEnd: null,
+  };
+}
+
+export function resumePlayer(state: AppState, id: PlayerId): AppState {
+  if (!state.benched.includes(id)) return state;
+  return {
+    ...state,
+    benched: state.benched.filter((b) => b !== id),
+    queue: [...state.queue, id],
+    lastGameEnd: null,
   };
 }
 
@@ -76,7 +101,7 @@ export function moveInQueue(
   next.splice(idx, 1);
   const clamped = Math.max(0, Math.min(targetIndex, next.length));
   next.splice(clamped, 0, id);
-  return { ...state, queue: next };
+  return { ...state, queue: next, lastGameEnd: null };
 }
 
 export function setCourtCount(state: AppState, count: number): AppState {
@@ -87,11 +112,15 @@ export function setCourtCount(state: AppState, count: number): AppState {
     const added = Array.from({ length: target - current }, (_, i) =>
       makeCourt(current + i + 1),
     );
-    return { ...state, courts: [...state.courts, ...added] };
+    return { ...state, courts: [...state.courts, ...added], lastGameEnd: null };
   }
   const dropped = state.courts.slice(target);
   if (dropped.some((c) => c.status === "playing")) return state;
-  return { ...state, courts: state.courts.slice(0, target) };
+  return {
+    ...state,
+    courts: state.courts.slice(0, target),
+    lastGameEnd: null,
+  };
 }
 
 export function canStartGame(state: AppState, courtId: number): boolean {
@@ -118,6 +147,7 @@ export function startGame(
         ? { ...c, status: "playing", teamA: [s[0], s[1]], teamB: [s[2], s[3]] }
         : c,
     ),
+    lastGameEnd: null,
   };
 }
 
@@ -162,6 +192,39 @@ export function endGame(
     courts: state.courts.map((c) =>
       c.id === courtId ? { ...c, status: "open", teamA: null, teamB: null } : c,
     ),
+    lastGameEnd: { courtId, teamA, teamB, outcome: winner },
+  };
+}
+
+export function canUndo(state: AppState): boolean {
+  return state.lastGameEnd !== null;
+}
+
+export function undoLastGameEnd(state: AppState): AppState {
+  const record = state.lastGameEnd;
+  if (!record) return state;
+  const { courtId, teamA, teamB, outcome } = record;
+  const four = [...teamA, ...teamB];
+
+  let stats = state.stats;
+  if (outcome === "A" || outcome === "B") {
+    const winners = outcome === "A" ? teamA : teamB;
+    const losers = outcome === "A" ? teamB : teamA;
+    stats = { ...stats };
+    for (const id of winners)
+      stats[id] = bump(stats[id], { wins: -1, games: -1 });
+    for (const id of losers)
+      stats[id] = bump(stats[id], { losses: -1, games: -1 });
+  }
+
+  return {
+    ...state,
+    stats,
+    queue: state.queue.filter((id) => !four.includes(id)),
+    courts: state.courts.map((c) =>
+      c.id === courtId ? { ...c, status: "playing", teamA, teamB } : c,
+    ),
+    lastGameEnd: null,
   };
 }
 
@@ -208,6 +271,8 @@ export function backToBackThreshold(courtCount: number): number {
 }
 
 export function smallGroupWarning(state: AppState): boolean {
-  const total = state.players.length;
-  return total >= 1 && total < backToBackThreshold(state.courts.length);
+  // Benched players are not in rotation, so they don't count toward avoiding
+  // back-to-back games.
+  const available = state.players.length - state.benched.length;
+  return available >= 1 && available < backToBackThreshold(state.courts.length);
 }

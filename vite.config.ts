@@ -16,8 +16,8 @@ export default defineConfig({
         short_name: "Paddle Stack",
         description:
           "Organizer-run pickleball queue with paddle-stack rotation.",
-        theme_color: "#0f766e",
-        background_color: "#0f766e",
+        theme_color: "#0b1020",
+        background_color: "#0b1020",
         display: "standalone",
         orientation: "portrait",
         icons: [
